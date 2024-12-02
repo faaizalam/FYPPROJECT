@@ -1,0 +1,36 @@
+// If you want to override variables do it here
+@import "variables";
+
+// Import styles
+@import "@coreui/coreui/scss/coreui";
+@import "@coreui/chartjs/scss/coreui-chartjs";
+
+// Vendors
+@import "vendors/simplebar";
+
+// Custom styles for this theme
+@import "theme";
+
+// If you want to add custom CSS you can put it here
+@import "custom";
+
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between image and text */
+  }
+  
+  .brand-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .brand-text {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+  }
+  
