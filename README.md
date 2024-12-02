@@ -108,3 +108,12 @@ Get updates on CoreUI's development and chat with the project maintainers and co
 copyright 2024 Final Year Project.   
 
 
+Code released under [the MIT license](https://github.com/coreui/coreui-free-react-admin-template/blob/main/LICENSE).# FYPPROJECT
+=======
+
+## Copyright and License
+
+copyright 2024 Final Year Project.   
+
+
+>>>>>>> 1501e0a (Initial commit)
