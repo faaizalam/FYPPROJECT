@@ -3,11 +3,13 @@ import CIcon from '@coreui/icons-react'
 import {
   cilBell,
   cilCalculator,
+  cilCamera,
   cilChartPie,
   cilCursor,
   cilDescription,
   cilDrop,
   cilExternalLink,
+  cilFingerprint,
   cilNotes,
   cilPencil,
   cilPuzzle,
@@ -33,9 +35,9 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Colors',
-    to: '/theme/colors',
-    icon: <CIcon icon={cilDrop} customClassName="nav-icon" />,
+    name: 'AiCamera',
+    to: '/ai/camera',
+    icon: <CIcon icon={cilFingerprint} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
