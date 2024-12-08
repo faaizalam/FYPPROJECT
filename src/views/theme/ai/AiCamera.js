@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as faceapi from "face-api.js";
-
+import "./ai.scss"
 const AiCamera = () => {
   const videoRef = useRef(null);
   const [currentExpression, setCurrentExpression] = useState("Waiting for detection...");
@@ -8,8 +8,13 @@ const AiCamera = () => {
   useEffect(() => {
     const loadModels = async () => {
       console.log("Loading models...");
-      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-      await faceapi.nets.faceExpressionNet.loadFromUri("/models");
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),// TinyFaceDetector: A lightweight face detection model. It’s fast and suitable for real-time applications.
+        faceapi.nets.faceExpressionNet.loadFromUri("/models"), // FaceExpressionNet: Used for detecting facial expressions such as happiness, sadness, anger, etc.
+        faceapi.nets.faceLandmark68Net.loadFromUri("/models"), // FaceExpressionNet: Used for detecting facial expressions such as happiness, sadness, anger, etc.
+
+      ])
+
       console.log("Models loaded successfully");
 
       startVideo();
@@ -17,9 +22,12 @@ const AiCamera = () => {
 
     const startVideo = () => {
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({ video: true, mirror: true })
         .then((stream) => {
-          videoRef.current.srcObject = stream;
+          const videoElement = document.querySelector('video');
+          videoElement.srcObject = stream;
+          videoElement.style.transform = 'scaleX(-1)';
+
           console.log("Video is playing");
         })
         .catch((err) => {
@@ -30,60 +38,68 @@ const AiCamera = () => {
     loadModels();
   }, []);
 
-  const detectExpressions = async () => {
+  const detectExpressions = async (displaySize, canvas) => {
     if (!videoRef.current) return;
 
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.6 });
 
-    const detections = await faceapi
-      .detectAllFaces(videoRef.current, options)
+    // Use detectSingleFace instead of detectAllFaces
+    const detection = await faceapi
+      .detectSingleFace(videoRef.current, options).withFaceLandmarks()
       .withFaceExpressions();
-
-    if (detections.length > 0) {
-      const expressions = detections[0].expressions;
-      const highestExpression = Object.keys(expressions).reduce((a, b) =>
-        expressions[a] > expressions[b] ? a : b
-      );
-
-      setCurrentExpression(highestExpression);
-
-      // Draw detections
-      const canvas = faceapi.createCanvasFromMedia(videoRef.current);
-      const displaySize = { width: videoRef.current.width, height: videoRef.current.height };
-      faceapi.matchDimensions(canvas, displaySize);
-
-      const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
-      // Clear the existing canvas
-      const existingCanvas = document.getElementById("overlay");
-      if (existingCanvas) existingCanvas.remove();
-
-      // Add a new canvas
-      canvas.id = "overlay";
-      document.body.append(canvas);
-
-      faceapi.draw.drawDetections(canvas, resizedDetections);
-      faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+    console.log(detection, "ll")
+    if (!detection) {
+      // No face detected, set expression to "No face detected"
+      setCurrentExpression("No face detected");
+      return;
     }
+    const resizedDetections = faceapi.resizeResults([detection], displaySize)
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height)
+    faceapi.draw.drawDetections(canvas, resizedDetections)
+    faceapi.draw.drawFaceLandmarks(canvas,resizedDetections)
+    const expressions = detection.expressions;
+    console.log(detection, "Object.keys(expressions)")
+    const highestExpression = Object.keys(expressions).reduce((a, b) =>
+      expressions[a] > expressions[b] ? a : b
+    );
+
+    setCurrentExpression(highestExpression);
+
+
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      detectExpressions();
-    }, 500); // Detect every 500ms
+    document.querySelector("video").addEventListener("play", () => {
+      //  let videoElement=document.querySelector("video")
+      let canvas = faceapi?.createCanvasFromMedia(videoRef.current)
+      document.getElementById("videoWrapper").append(canvas)
+      let displaySize = { width: videoRef.current.width, height: videoRef.current.height }
+      faceapi.matchDimensions(canvas, displaySize)
+      const interval = setInterval(() => {
+        detectExpressions(displaySize, canvas);
+      }, 500); // Detect every 500ms
 
-    return () => clearInterval(interval); // Cleanup interval on component unmount
-  }, []);
+      return () => clearInterval(interval); // Cleanup interval on component unmount
+
+    })
+  }, [videoRef.current]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <video ref={videoRef} autoPlay playsInline width="640" height="480" style={{ border: "1px solid #ccc" }} />
+    <div id="videoWrapper" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        width="640"
+        height="480"
+
+      />
       <div
         style={{
           marginTop: "10px",
           fontSize: "18px",
           fontWeight: "bold",
-          color: "#333",
+          color: "white",
         }}
       >
         Expression: {currentExpression}
